@@ -3,4 +3,4 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-hello_world = "hello world"
+"hello world"
