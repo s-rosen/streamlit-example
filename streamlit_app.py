@@ -15,54 +15,51 @@ json_objects = [
 # Convert JSON objects to strings for display
 json_strings = [json.dumps(obj, indent=2) for obj in json_objects]
 
-
 # Initialize the toggle state in Streamlit's session state if it's not already set
 if 'show_json_editor' not in st.session_state:
     st.session_state.show_json_editor = False
+
+# Initialize a dictionary in session state to hold the filters for each key
+if 'filters' not in st.session_state:
+    st.session_state.filters = {"name": [], "age": [], "city": []}
 
 # Button to toggle the visibility of the JSON editor
 if st.button("Edit JSON"):
     # Flip the current state
     st.session_state.show_json_editor = not st.session_state.show_json_editor
 
-# Conditionally show the text area based on the toggle state
-if st.session_state.show_json_editor:
-    st.text_area("JSON String", value=json_strings[selected_index], height=300)
-
 # Convert the list of JSONs to a DataFrame for easier handling
 df = pd.DataFrame(json_objects)
 
 # Sidebar for filtering
 st.header("Filter options")
-filter_key = st.selectbox("Filter by", options=["name", "age", "city"])
+filter_key = st.selectbox("Filter by", options=["name", "age", "city"], key="filter_by_key")
 
 # Generate a list of unique values for the selected filter key
 unique_values = df[filter_key].unique().tolist()
-unique_values.sort()  # Optional: sort the list for easier browsing
+unique_values.sort()  # Sort the list for easier browsing
 
-# Use a selectbox (for single selection) or multiselect (for multiple selections) for the filter values
-# For a single selection:
-filter_value = st.selectbox(f"Select {filter_key}", [''] + unique_values)
+# Multiselect for the filter values, using the filter_key to save and load selected values
+selected_filters = st.multiselect(f"Select {filter_key}", unique_values, default=st.session_state.filters[filter_key], key=f"select_{filter_key}")
 
-# For multiple selections (optional alternative):
-filter_value = st.multiselect(f"Select {filter_key}", unique_values)
+# Save the selected filters back to the session state
+st.session_state.filters[filter_key] = selected_filters
 
-# Filter the DataFrame based on the selected filter_key and filter_value
-if filter_value:
-    if isinstance(filter_value, list):  # If using multiselect
-        filtered_df = df[df[filter_key].isin(filter_value)]
-    else:  # If using selectbox
-        filtered_df = df[df[filter_key] == filter_value]
-else:
-    filtered_df = df
-
-# Assuming all other parts of your code remain the same
+# Apply filters to the DataFrame
+filtered_df = df
+for key, values in st.session_state.filters.items():
+    if values:  # Check if there are any filters to apply for this key
+        filtered_df = filtered_df[filtered_df[key].isin(values)]
 
 # Display filtered JSONs
 if not filtered_df.empty:
-    selected_index = st.selectbox("Select an entry", range(len(filtered_df)), format_func=lambda x: f"{filtered_df.iloc[x]['name']} - {filtered_df.iloc[x]['age']} - {filtered_df.iloc[x]['city']}", key="filtered_json_selection")
+    selected_index = st.selectbox(
+        "Select an entry",
+        range(len(filtered_df)),
+        format_func=lambda x: f"{filtered_df.iloc[x]['name']} - {filtered_df.iloc[x]['age']} - {filtered_df.iloc[x]['city']}",
+        key="filtered_json_selection"
+    )
     if st.button("Display JSON", key="display_json_button"):
         st.json(filtered_df.iloc[selected_index].to_dict())
 else:
     st.write("No entries match your filter criteria.")
-
