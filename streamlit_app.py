@@ -138,9 +138,25 @@ st.session_state['trigger_type'] = selected_triggers
 selected_component_count = st.sidebar.multiselect("Number of Components", component_counts, key="filter_number_of_components")
 st.session_state['number_of_components'] = selected_component_count
 
-# Text input for search query
-search_query = st.text_input("Search JSONs", value=st.session_state['search_query'])
-st.session_state['search_query'] = search_query.lower()
+def update_app_based_on_search(query):
+    pass  # Replace this with the actual logic to update the app based on the search query
+
+# Initialize a temporary search query state if not already present
+if 'temp_search_query' not in st.session_state:
+    st.session_state['temp_search_query'] = ""
+
+# Define a callback function that updates the app based on the search query
+def on_search_query_change():
+    st.session_state['search_query'] = st.session_state['temp_search_query'].lower()
+    update_app_based_on_search(st.session_state['search_query'])
+
+# Create a text input for the search query with an on_change callback
+search_query = st.text_input(
+    "Search JSONs", 
+    value=st.session_state['temp_search_query'], 
+    key='temp_search_query',
+    on_change=on_search_query_change
+)
 
 # Function to filter JSON objects based on the search query and selected filters
 def filter_json_objects(json_objects, query, session_state):
