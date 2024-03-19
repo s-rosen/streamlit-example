@@ -87,72 +87,82 @@ json_objects = [
 if 'search_query' not in st.session_state:
     st.session_state['search_query'] = ""
 
-# Initialize filter states
-filter_keys = ['component_definition', 'component_category', 'trigger_type', 'num_components']
-for key in filter_keys:
-    if key not in st.session_state:
-        st.session_state[key] = []
+if 'component_definition' not in st.session_state:
+    st.session_state['component_definition'] = []
 
-# Sidebar for filtering
+if 'component_category' not in st.session_state:
+    st.session_state['component_category'] = []
+
+if 'trigger_type' not in st.session_state:
+    st.session_state['trigger_type'] = []
+
+if 'number_of_components' not in st.session_state:
+    st.session_state['number_of_components'] = []
+
+# Sidebar for filtering based on component definitions, categories, trigger types, and number of components
 st.sidebar.header("Filter options")
 
-# Extract unique values for filters dynamically from json_objects
+# Extract unique values for filters
 unique_definitions = set()
 unique_categories = set()
 unique_triggers = set()
-num_components_options = set()
+component_counts = set()
 
 for obj in json_objects:
     for component in obj.get("components", []):
-        unique_definitions.add(component.get("definition"))
-        unique_categories.add(component.get("category"))
-    # Handle trigger type
-    if isinstance(obj.get("trigger"), dict):
-        unique_triggers.add(obj["trigger"].get("type"))
+        unique_definitions.add(component.get("definition", "Unknown"))
+        unique_categories.add(component.get("category", "Unknown"))
+    trigger = obj.get("trigger")
+    if isinstance(trigger, dict):
+        unique_triggers.add(trigger.get("type", "Unknown"))
     else:
-        unique_triggers.add(obj.get("trigger"))  # Direct string or null
-    # Count components
-    num_components_options.add(len(obj.get("components", [])))
+        unique_triggers.add("Unknown" if trigger is None else str(trigger))
+    component_counts.add(len(obj.get("components", [])))
 
-# Multiselect for component definitions
-selected_definitions = st.sidebar.multiselect("Select Component Definition", list(unique_definitions), key="select_component_definition")
+# Convert sets to sorted lists
+unique_definitions = sorted(list(unique_definitions))
+unique_categories = sorted(list(unique_categories))
+unique_triggers = sorted(list(unique_triggers))
+component_counts = sorted(list(component_counts))
 
-# Multiselect for component categories
-selected_categories = st.sidebar.multiselect("Select Component Category", list(unique_categories), key="select_component_category")
-
-# Multiselect for trigger types
-selected_triggers = st.sidebar.multiselect("Select Trigger Type", list(unique_triggers), key="select_trigger_type")
-
-# Multiselect for number of components
-selected_num_components = st.sidebar.multiselect("Select Number of Components", sorted(list(num_components_options)), key="select_num_components")
-
-# Update session state for filters
+# Filter UI
+selected_definitions = st.sidebar.multiselect("Component Definition", unique_definitions, key="filter_component_definition")
 st.session_state['component_definition'] = selected_definitions
+
+selected_categories = st.sidebar.multiselect("Component Category", unique_categories, key="filter_component_category")
 st.session_state['component_category'] = selected_categories
+
+selected_triggers = st.sidebar.multiselect("Trigger Type", unique_triggers, key="filter_trigger_type")
 st.session_state['trigger_type'] = selected_triggers
-st.session_state['num_components'] = selected_num_components
+
+selected_component_count = st.sidebar.multiselect("Number of Components", component_counts, key="filter_number_of_components")
+st.session_state['number_of_components'] = selected_component_count
 
 # Text input for search query
 search_query = st.text_input("Search JSONs", value=st.session_state['search_query'])
 st.session_state['search_query'] = search_query.lower()
 
-# Function to filter JSON objects
-def filter_json_objects(json_objects, query, filters):
+# Function to filter JSON objects based on the search query and selected filters
+def filter_json_objects(json_objects, query, session_state):
     filtered_objects = []
     for obj in json_objects:
-        json_str = json.dumps(obj).lower()
-        if query in json_str:
-            # Additional checks for each filter type
-            definitions_match = all(defi in json_str for defi in map(str.lower, filters['component_definition']))
-            categories_match = all(cat in json_str for cat in map(str.lower, filters['component_category']))
-            triggers_match = (obj.get("trigger", {}).get("type", "") in filters['trigger_type']) or (str(obj.get("trigger")) in filters['trigger_type'])
-            num_components_match = (len(obj.get("components", [])) in filters['num_components'])
+        # Serialize object and search
+        if query not in json.dumps(obj).lower():
+            continue
 
-            if definitions_match and categories_match and triggers_match and num_components_match:
-                filtered_objects.append(obj)
+        # Apply additional filter logic
+        components = obj.get("components", [])
+        if (selected_definitions and not any(comp.get("definition") in selected_definitions for comp in components)) or \
+           (selected_categories and not any(comp.get("category") in selected_categories for comp in components)) or \
+           (selected_triggers and (str(obj.get("trigger")) not in selected_triggers and obj.get("trigger", {}).get("type") not in selected_triggers)) or \
+           (selected_component_count and len(components) not in selected_component_count):
+            continue
+        
+        filtered_objects.append(obj)
+    
     return filtered_objects
 
-# Apply filters
+# Apply filters and search
 filtered_json_objects = filter_json_objects(json_objects, st.session_state['search_query'], st.session_state)
 
 # Display filtered JSON objects
