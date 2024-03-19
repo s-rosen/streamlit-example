@@ -15,17 +15,14 @@ json_objects = [
 # Convert JSON objects to strings for display
 json_strings = [json.dumps(obj, indent=2) for obj in json_objects]
 
-# Initialize the toggle state in Streamlit's session state if it's not already set
+# Initialize the toggle state and filters in Streamlit's session state if they're not already set
 if 'show_json_editor' not in st.session_state:
     st.session_state.show_json_editor = False
-
-# Initialize a dictionary in session state to hold the filters for each key
 if 'filters' not in st.session_state:
     st.session_state.filters = {"name": [], "age": [], "city": []}
 
 # Button to toggle the visibility of the JSON editor
 if st.button("Edit JSON"):
-    # Flip the current state
     st.session_state.show_json_editor = not st.session_state.show_json_editor
 
 # Convert the list of JSONs to a DataFrame for easier handling
@@ -45,10 +42,16 @@ selected_filters = st.multiselect(f"Select {filter_key}", unique_values, default
 # Save the selected filters back to the session state
 st.session_state.filters[filter_key] = selected_filters
 
+# Display all selected filters/tags
+st.write("Selected filters:")
+for key, values in st.session_state.filters.items():
+    if values:
+        st.write(f"{key.capitalize()}: {', '.join(map(str, values))}")
+
 # Apply filters to the DataFrame
 filtered_df = df
 for key, values in st.session_state.filters.items():
-    if values:  # Check if there are any filters to apply for this key
+    if values:
         filtered_df = filtered_df[filtered_df[key].isin(values)]
 
 # Display filtered JSONs
