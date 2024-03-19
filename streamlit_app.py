@@ -85,17 +85,17 @@ json_objects = [
 
 # Preprocess JSON objects to flatten the data for pandas
 flattened_data = []
-for obj_index, obj in enumerate(json_objects):
-    trigger_type = obj["trigger"]["type"] if "trigger" in obj and isinstance(obj["trigger"], dict) and "type" in obj["trigger"] else "None"
+for index, obj in enumerate(json_objects):
+    trigger_type = obj["trigger"]["type"] if isinstance(obj.get("trigger", {}), dict) and "type" in obj["trigger"] else "None"
     for component in obj.get("components", []):
         flattened_data.append({
-            "json_index": obj_index,
+            "json_index": index,
             "component_definition": component.get("definition", "None"),
             "component_category": component.get("category", "None"),
             "trigger_type": trigger_type,
         })
 
-# Now convert the preprocessed data to a DataFrame
+# Convert the preprocessed data to a DataFrame
 df = pd.DataFrame(flattened_data)
 
 # Initialize the session state for filters if it doesn't exist yet
@@ -105,46 +105,39 @@ if 'search_query' not in st.session_state:
     st.session_state.search_query = ""
 
 # Text input for search functionality
-search_query = st.text_input("Search JSONs", value=st.session_state.search_query)
-st.session_state.search_query = search_query
-
-# Function to apply filters to the DataFrame
-def apply_filters(df, search_query, filters):
-    filtered_df = df
-    for key, values in filters.items():
-        if values:
-            filtered_df = filtered_df[filtered_df[key].isin(values)]
-    if search_query:
-        filtered_df = filtered_df[df.apply(lambda row: search_query.lower() in json.dumps(row.to_dict()).lower(), axis=1)]
-    return filtered_df
+search_query = st.text_input("Search JSONs", value=st.session_state.search_query, key='search_query')
 
 # Sidebar for filtering
 st.sidebar.header("Filter options")
-filter_key = st.sidebar.selectbox("Filter by", options=["component_definition", "component_category", "trigger_type"], key="filter_by_key")
+filter_keys = ["component_definition", "component_category", "trigger_type"]
+filter_key = st.sidebar.radio("Filter by", options=filter_keys, key="filter_by_key")
 
 # Generate a list of unique values for the selected filter key
 unique_values = df[filter_key].unique().tolist()
 unique_values.sort()  # Sort the list for easier browsing
 
 # Multiselect for the filter values
-selected_filters = st.sidebar.multiselect(f"Select {filter_key}", unique_values, default=st.session_state.filters[filter_key], key=f"select_{filter_key}")
+selected_filters = st.sidebar.multiselect(f"Select {filter_key}", unique_values, key=f"select_{filter_key}")
 
-# Update the session state for filters
+# Save the selected filters and search query to the session state
 st.session_state.filters[filter_key] = selected_filters
+st.session_state.search_query = search_query.lower()  # Convert search query to lowercase for case-insensitive search
 
-# Apply the filters and search query to the DataFrame
-filtered_df = apply_filters(df, st.session_state.search_query, st.session_state.filters)
+# Filter the DataFrame based on the selected filters
+filtered_indices = set(df.index)  # Start with all indices
+for key in filter_keys:
+    if st.session_state.filters[key]:  # If there are any filters for this key
+        filtered_indices &= set(df[df[key].isin(st.session_state.filters[key])].index)
 
-# Display the selected filters
-st.write("Selected filters:")
-for key, values in st.session_state.filters.items():
-    if values:
-        st.write(f"{key.capitalize().replace('_', ' ')}: {', '.join(map(str, values))}")
+# Apply text search to the filtered DataFrame
+if st.session_state.search_query:
+    filtered_indices &= set(df[df.apply(lambda row: st.session_state.search_query in json.dumps(row.to_dict()).lower(), axis=1)].index)
+
+# Get the indices of the JSON objects that meet the filter criteria
+filtered_json_indices = [flattened_data[index]['json_index'] for index in filtered_indices]
 
 # Display the list of JSONs as expandable items
-st.write("JSON Objects:")
-for i, json_obj in enumerate(json_objects):
-    with st.expander(f"JSON {i + 1}"):
-        st.json(json_obj)
-
-# The filter functionality and display of the full JSON can be implemented as needed.
+st.write("Filtered JSON Objects:")
+for index in filtered_json_indices:
+    with st.expander(f"JSON {index + 1}"):
+        st.json(json_objects[index])
