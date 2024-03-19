@@ -83,16 +83,20 @@ json_objects = [
         ]
     }
 ]
-# Convert JSON objects to strings for display
+
+# Convert JSON objects to strings for display (if needed)
 json_strings = [json.dumps(obj, indent=2) for obj in json_objects]
+
 # Preprocess JSON objects to create a flat structure for pandas
 flattened_data = []
 for obj in json_objects:
+    # Check if 'trigger' is a dictionary and access 'type' accordingly
+    trigger_type = obj["trigger"]["type"] if isinstance(obj["trigger"], dict) else None
     for component in obj["components"]:
         flattened_data.append({
             "component_definition": component["definition"],
             "component_category": component["category"],
-            "trigger_type": obj["trigger"]["type"],
+            "trigger_type": trigger_type,
         })
 
 # Convert the preprocessed data to a DataFrame
@@ -130,6 +134,6 @@ for key, values in st.session_state.filters.items():
 
 # Display filtered DataFrame
 if not filtered_df.empty:
-    st.write(filtered_df)
+    st.dataframe(filtered_df)
 else:
     st.write("No entries match your filter criteria.")
