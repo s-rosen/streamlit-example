@@ -11,7 +11,7 @@ json_objects = [
              "Utterance2": "Make a subflow where for each open incident you create a detailed log entry and send it in a teams message."
             }          
         ], 
-        "trigger": null,
+        "trigger": "null",
         "components": [
             {
                 "category": "action",
@@ -42,23 +42,23 @@ json_objects = [
         ]
     },
     {
-    "utterances": [
-        {"Utterance1": "On Mondays, go through each case and create a log.",
-         "Utterance2": "Make a weekly flow that runs on Monday that checks and logs all risk management assessments performed over the week, so they could be analyzed later for any discrepancies or inconsistencies."
-        }
-    ],
-    "trigger": {
-        "type": "weekly",
-        "inputs": [
-            {
-                "name": "time",
-                "value": "1970-01-01 00:00:00"
-            },
-            {
-                "name": "day_of_week",
-                "value": "1"
+        "utterances": [
+            {"Utterance1": "On Mondays, go through each case and create a log.",
+            "Utterance2": "Make a weekly flow that runs on Monday that checks and logs all risk management assessments performed over the week, so they could be analyzed later for any discrepancies or inconsistencies."
             }
-        ]
+        ],
+        "trigger": {
+            "type": "weekly",
+            "inputs": [
+                {
+                    "name": "time",
+                    "value": "1970-01-01 00:00:00"
+                },
+                {
+                    "name": "day_of_week",
+                    "value": "1"
+                }
+            ]
         },
         "components": [
             {
