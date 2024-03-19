@@ -95,6 +95,15 @@ for index, obj in enumerate(json_objects):
             "trigger_type": trigger_type,
         })
 
+for obj in json_objects:
+    # Include utterances in the flattened data.
+    utterance_str = " ".join(utt for utt in obj["utterances"][0].values())
+    # Rest of your code for handling triggers and components.
+    flattened_data.append({
+        "utterance": utterance_str,
+        # other component details
+    })
+
 # Convert the preprocessed data to a DataFrame
 df = pd.DataFrame(flattened_data)
 
