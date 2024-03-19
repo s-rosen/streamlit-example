@@ -33,8 +33,8 @@ if st.session_state.show_json_editor:
 df = pd.DataFrame(json_objects)
 
 # Sidebar for filtering
-st.sidebar.header("Filter options")
-filter_key = st.sidebar.selectbox("Filter by", options=["name", "age", "city"])
+st.header("Filter options")
+filter_key = st.selectbox("Filter by", options=["name", "age", "city"])
 
 # Generate a list of unique values for the selected filter key
 unique_values = df[filter_key].unique().tolist()
@@ -42,10 +42,10 @@ unique_values.sort()  # Optional: sort the list for easier browsing
 
 # Use a selectbox (for single selection) or multiselect (for multiple selections) for the filter values
 # For a single selection:
-filter_value = st.sidebar.selectbox(f"Select {filter_key}", [''] + unique_values)
+filter_value = st.selectbox(f"Select {filter_key}", [''] + unique_values)
 
 # For multiple selections (optional alternative):
-# filter_value = st.sidebar.multiselect(f"Select {filter_key}", unique_values)
+filter_value = st.multiselect(f"Select {filter_key}", unique_values)
 
 # Filter the DataFrame based on the selected filter_key and filter_value
 if filter_value:
