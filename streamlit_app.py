@@ -37,5 +37,4 @@ else:
 
 # Display filtered JSONs
 selected_index = st.selectbox("Select an entry", range(len(filtered_df)), format_func=lambda x: filtered_df.iloc[x]["name"])
-if st.button("Display JSON"):
-    st.json(filtered_df.iloc[selected_index].to_dict())
+st.json(filtered_df.iloc[selected_index].to_dict())
