@@ -6,7 +6,7 @@ import pandas as pd
 json_objects = [
     {"name": "Alice", "age": 30, "city": "New York"},
     {"name": "Bob", "age": 25, "city": "San Francisco"},
-    {"name": "Charlie", "age": 35, "city": "London"}
+    {"name": "Charlie", "age": 35, "city": "London"},
     {"name": "Alice", "age": 35, "city": "Cairo"},
     {"name": "Bob", "age": 80, "city": "Paris"},
     {"name": "Charlie", "age": 6, "city": "Tokyo"}
