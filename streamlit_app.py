@@ -82,11 +82,15 @@ json_objects = [
         ]
     }
 ]
+# Assume `json_objects` is your list of JSON dictionaries
+json_objects = [
+    # Your JSON objects here
+]
+
 # Preprocess JSON objects to flatten the data for pandas
 flattened_data = []
 for obj in json_objects:
-    # Determine the trigger_type, accounting for the possible absence of the "trigger" key or it being a string
-    trigger_type = obj["trigger"]["type"] if isinstance(obj.get("trigger", {}), dict) and "type" in obj["trigger"] else "None"
+    trigger_type = obj["trigger"]["type"] if "trigger" in obj and isinstance(obj["trigger"], dict) and "type" in obj["trigger"] else "None"
     for component in obj.get("components", []):
         flattened_data.append({
             "component_definition": component.get("definition", "None"),
@@ -140,10 +144,8 @@ for key, values in st.session_state.filters.items():
     if values:
         st.write(f"{key.capitalize().replace('_', ' ')}: {', '.join(map(str, values))}")
 
-# Allow the user to select and view individual JSONs from the filtered results
-if not filtered_df.empty:
-    selected_index = st.selectbox("Select a JSON to view", range(len(filtered_df)), format_func=lambda x: f"JSON {x + 1}")
-    selected_json = json_objects[selected_index]  # Assuming `filtered_df` is in the same order as `json_objects`
-    st.json(selected_json)
-else:
-    st.write("No entries match your filter criteria.")
+# Display the list of JSONs as expandable items
+st.write("JSON Objects:")
+for i, json_obj in enumerate(json_objects):
+    with st.expander(f"JSON {i + 1}"):
+        st.json(json_obj)
