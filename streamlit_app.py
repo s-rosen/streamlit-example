@@ -4,12 +4,84 @@ import pandas as pd
 
 # Example list of JSON objects. Replace this with your actual JSON objects or the method to load/fetch them.
 json_objects = [
-    {"name": "Alice", "age": 30, "city": "New York"},
-    {"name": "Bob", "age": 25, "city": "San Francisco"},
-    {"name": "Charlie", "age": 35, "city": "London"},
-    {"name": "Alice", "age": 35, "city": "Cairo"},
-    {"name": "Bob", "age": 80, "city": "Paris"},
-    {"name": "Charlie", "age": 6, "city": "Tokyo"}
+    {
+        
+        "utterances": [
+            {"Utterance1": "Create a subflow that iterates through every incident record, logs it, and sends a teams message with a short description of the incident.",
+             "Utterance2": "Make a subflow where for each open incident you create a detailed log entry and send it in a teams message."
+            }          
+        ], 
+        "trigger": null,
+        "components": [
+            {
+                "category": "action",
+                "definition": "look_up_records",
+                "scope": "global",
+                "order": 1
+            }, 
+            {
+                "category": "flowlogic",
+                "definition": "FOREACH",
+                "scope": "global",
+                "order": 2
+            },
+            {
+                "category": "action",
+                "definition": "log",
+                "scope": "global",
+                "order": 3,
+                "block": 2
+            },
+            {
+                "category": "action",
+                "definition": "post_a_message",
+                "scope": "sn_ms_teams_ah",
+                "order": 4,
+                "block": 2
+            }   
+        ]
+    },
+    {
+    "utterances": [
+        {"Utterance1": "On Mondays, go through each case and create a log.",
+         "Utterance2": "Make a weekly flow that runs on Monday that checks and logs all risk management assessments performed over the week, so they could be analyzed later for any discrepancies or inconsistencies."
+        }
+    ],
+    "trigger": {
+        "type": "weekly",
+        "inputs": [
+            {
+                "name": "time",
+                "value": "1970-01-01 00:00:00"
+            },
+            {
+                "name": "day_of_week",
+                "value": "1"
+            }
+        ]
+        },
+        "components": [
+            {
+                "category": "action",
+                "definition": "look_up_records",
+                "scope": "global",
+                "order": 1
+            },
+            {
+                "category": "flowlogic",
+                "definition": "FOREACH",
+                "scope": "global",
+                "order": 2
+            },
+            {
+                "category": "action",
+                "definition": "log",
+                "scope": "global",
+                "order": 3,
+                "block": 2
+            }
+        ]
+    }
 ]
 
 # Convert JSON objects to strings for display
