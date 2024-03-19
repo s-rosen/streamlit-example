@@ -12,8 +12,6 @@ json_objects = [
 # Convert JSON objects to strings for display
 json_strings = [json.dumps(obj, indent=2) for obj in json_objects]
 
-# Sidebar for selecting which JSON to display
-selected_index = st.selectbox("Select JSON", range(len(json_strings)), format_func=lambda x: f"JSON {x + 1}")
 
 # Initialize the toggle state in Streamlit's session state if it's not already set
 if 'show_json_editor' not in st.session_state:
