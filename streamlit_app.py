@@ -119,25 +119,27 @@ unique_values.sort()  # Sort the list for easier browsing
 # Multiselect for the filter values
 selected_filters = st.sidebar.multiselect(f"Select {filter_key}", unique_values, key=f"select_{filter_key}")
 
-# Save the selected filters and search query to the session state
+# Update the session state for filters
 st.session_state.filters[filter_key] = selected_filters
-st.session_state.search_query = search_query.lower()  # Convert search query to lowercase for case-insensitive search
 
-# Filter the DataFrame based on the selected filters
-filtered_indices = set(df.index)  # Start with all indices
-for key in filter_keys:
-    if st.session_state.filters[key]:  # If there are any filters for this key
-        filtered_indices &= set(df[df[key].isin(st.session_state.filters[key])].index)
+# Now we don't need to manually update st.session_state.search_query since it's already bound to the search_query input
 
-# Apply text search to the filtered DataFrame
-if st.session_state.search_query:
-    filtered_indices &= set(df[df.apply(lambda row: st.session_state.search_query in json.dumps(row.to_dict()).lower(), axis=1)].index)
+# Function to apply filters and search query to the DataFrame
+def filter_data(df, filter_keys, filters, search_query):
+    filtered_df = df.copy()
+    for key in filter_keys:
+        if filters[key]:  # If there are any filters for this key
+            filtered_df = filtered_df[filtered_df[key].isin(filters[key])]
+    if search_query:
+        filtered_df = filtered_df[filtered_df.apply(lambda row: search_query.lower() in json.dumps(row.to_dict()).lower(), axis=1)]
+    return filtered_df
 
-# Get the indices of the JSON objects that meet the filter criteria
-filtered_json_indices = [flattened_data[index]['json_index'] for index in filtered_indices]
+# Apply the filters and search query to the DataFrame
+filtered_df = filter_data(df, filter_keys, st.session_state.filters, st.session_state.search_query)
 
 # Display the list of JSONs as expandable items
 st.write("Filtered JSON Objects:")
-for index in filtered_json_indices:
-    with st.expander(f"JSON {index + 1}"):
-        st.json(json_objects[index])
+filtered_json_objects = [json_objects[i] for i in filtered_df['json_index'].unique()]
+for i, json_obj in enumerate(filtered_json_objects):
+    with st.expander(f"JSON {i + 1}"):
+        st.json(json_obj)
