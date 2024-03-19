@@ -85,55 +85,51 @@ json_objects = [
 ]
 # Convert JSON objects to strings for display
 json_strings = [json.dumps(obj, indent=2) for obj in json_objects]
+# Preprocess JSON objects to create a flat structure for pandas
+flattened_data = []
+for obj in json_objects:
+    for component in obj["components"]:
+        flattened_data.append({
+            "component_definition": component["definition"],
+            "component_category": component["category"],
+            "trigger_type": obj["trigger"]["type"],
+        })
 
-# Initialize the toggle state and filters in Streamlit's session state if they're not already set
-if 'show_json_editor' not in st.session_state:
-    st.session_state.show_json_editor = False
+# Convert the preprocessed data to a DataFrame
+df = pd.DataFrame(flattened_data)
+
+# Initialize filters in Streamlit's session state if they're not already set
 if 'filters' not in st.session_state:
-    st.session_state.filters = {"name": [], "age": [], "city": []}
-
-# Button to toggle the visibility of the JSON editor
-if st.button("Edit JSON"):
-    st.session_state.show_json_editor = not st.session_state.show_json_editor
-
-# Convert the list of JSONs to a DataFrame for easier handling
-df = pd.DataFrame(json_objects)
+    st.session_state.filters = {"component_definition": [], "component_category": [], "trigger_type": []}
 
 # Sidebar for filtering
-#st.header("Filter options")
-#filter_key = st.selectbox("Filter by", options=["name", "age", "city"], key="filter_by_key")
-#
-## Generate a list of unique values for the selected filter key
-#unique_values = df[filter_key].unique().tolist()
-#unique_values.sort()  # Sort the list for easier browsing
-#
-## Multiselect for the filter values, using the filter_key to save and load selected values
-#selected_filters = st.multiselect(f"Select {filter_key}", unique_values, default=st.session_state.filters[filter_key], key=f"select_{filter_key}")
-#
-## Save the selected filters back to the session state
-#st.session_state.filters[filter_key] = selected_filters
-#
-## Display all selected filters/tags
-#st.write("Selected filters:")
-#for key, values in st.session_state.filters.items():
-    #if values:
-        #st.write(f"{key.capitalize()}: {', '.join(map(str, values))}")
-#
-## Apply filters to the DataFrame
-#filtered_df = df
-#for key, values in st.session_state.filters.items():
-    #if values:
-        #filtered_df = filtered_df[filtered_df[key].isin(values)]
-#
-## Display filtered JSONs
-#if not filtered_df.empty:
-    #selected_index = st.selectbox(
-        #"Select an entry",
-        #range(len(filtered_df)),
-        #format_func=lambda x: f"{filtered_df.iloc[x]['name']} - {filtered_df.iloc[x]['age']} - {filtered_df.iloc[x]['city']}",
-        #key="filtered_json_selection"
-    #)
-    #if st.button("Display JSON", key="display_json_button"):
-        #st.json(filtered_df.iloc[selected_index].to_dict())
-#else:
-    #st.write("No entries match your filter criteria.")
+st.header("Filter options")
+filter_key = st.selectbox("Filter by", options=["component_definition", "component_category", "trigger_type"], key="filter_by_key")
+
+# Generate a list of unique values for the selected filter key
+unique_values = df[filter_key].unique().tolist()
+unique_values.sort()  # Sort the list for easier browsing
+
+# Multiselect for the filter values, using the filter_key to save and load selected values
+selected_filters = st.multiselect(f"Select {filter_key}", unique_values, default=st.session_state.filters[filter_key], key=f"select_{filter_key}")
+
+# Save the selected filters back to the session state
+st.session_state.filters[filter_key] = selected_filters
+
+# Display all selected filters/tags
+st.write("Selected filters:")
+for key, values in st.session_state.filters.items():
+    if values:
+        st.write(f"{key.capitalize().replace('_', ' ')}: {', '.join(map(str, values))}")
+
+# Apply filters to the DataFrame
+filtered_df = df
+for key, values in st.session_state.filters.items():
+    if values:
+        filtered_df = filtered_df[filtered_df[key].isin(values)]
+
+# Display filtered DataFrame
+if not filtered_df.empty:
+    st.write(filtered_df)
+else:
+    st.write("No entries match your filter criteria.")
