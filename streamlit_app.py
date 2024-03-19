@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import pandas as pd
+import numpy as np
 
 json_objects = [
     {
@@ -83,10 +84,21 @@ json_objects = [
     }
 ]
 
-# Preprocess JSON objects to flatten the data for pandas
+# Initialize session state for search query and filters if not already set
+if 'search_query' not in st.session_state:
+    st.session_state.search_query = ""
+
+if 'filters' not in st.session_state:
+    st.session_state.filters = {"component_definition": [], "component_category": [], "trigger_type": []}
+
+# Text input for the search functionality
+search_query = st.text_input("Search JSONs", value=st.session_state.search_query)
+st.session_state.search_query = search_query
+
+# Preprocess JSON objects to create a DataFrame for filtering
 flattened_data = []
 for index, obj in enumerate(json_objects):
-    trigger_type = obj["trigger"]["type"] if isinstance(obj.get("trigger", {}), dict) and "type" in obj["trigger"] else "None"
+    trigger_type = obj.get("trigger", {}).get("type", "None") if isinstance(obj.get("trigger", {}), dict) else "None"
     for component in obj.get("components", []):
         flattened_data.append({
             "json_index": index,
@@ -95,61 +107,39 @@ for index, obj in enumerate(json_objects):
             "trigger_type": trigger_type,
         })
 
-for obj in json_objects:
-    # Include utterances in the flattened data.
-    utterance_str = " ".join(utt for utt in obj["utterances"][0].values())
-    # Rest of your code for handling triggers and components.
-    flattened_data.append({
-        "utterance": utterance_str,
-        # other component details
-    })
-
-# Convert the preprocessed data to a DataFrame
 df = pd.DataFrame(flattened_data)
 
-# Initialize the session state for filters if it doesn't exist yet
-if 'filters' not in st.session_state:
-    st.session_state.filters = {"component_definition": [], "component_category": [], "trigger_type": []}
-if 'search_query' not in st.session_state:
-    st.session_state.search_query = ""
-
-# Text input for search functionality
-search_query = st.text_input("Search JSONs", value=st.session_state.search_query, key='search_query')
-
-# Sidebar for filtering
+# Sidebar for filtering options
 st.sidebar.header("Filter options")
 filter_keys = ["component_definition", "component_category", "trigger_type"]
-filter_key = st.sidebar.radio("Filter by", options=filter_keys, key="filter_by_key")
+filter_key = st.sidebar.radio("Filter by", options=filter_keys)
 
-# Generate a list of unique values for the selected filter key
-unique_values = df[filter_key].dropna().unique().tolist()  # Drop NaN values
-unique_values = [str(value) for value in unique_values]  # Convert all values to strings
-unique_values.sort()  # Now we can sort since all values are strings
+# Generate a list of unique values for the selected filter key, ensuring all values are strings for sorting
+unique_values = df[filter_key].dropna().unique()
+unique_values = [str(value) for value in unique_values]  # Convert all to strings to ensure sorting works
+unique_values.sort()
 
-# Multiselect for the filter values
-selected_filters = st.sidebar.multiselect(f"Select {filter_key}", unique_values, key=f"select_{filter_key}")
+selected_filters = st.sidebar.multiselect("Select {filter_key}", unique_values)
 
-# Update the session state for filters
+# Update filters based on selection
 st.session_state.filters[filter_key] = selected_filters
 
-# Now we don't need to manually update st.session_state.search_query since it's already bound to the search_query input
-
-# Function to apply filters and search query to the DataFrame
-def filter_data(df, filter_keys, filters, search_query):
+# Apply filters to DataFrame
+def apply_filters(df, filters, search_query):
     filtered_df = df.copy()
-    for key in filter_keys:
-        if filters[key]:  # If there are any filters for this key
-            filtered_df = filtered_df[filtered_df[key].isin(filters[key])]
+    for key, values in filters.items():
+        if values:
+            filtered_df = filtered_df[filtered_df[key].isin(values)]
     if search_query:
-        filtered_df = filtered_df[filtered_df.apply(lambda row: search_query.lower() in json.dumps(row.to_dict()).lower(), axis=1)]
+        search_query = search_query.lower()  # Case-insensitive search
+        filtered_df = filtered_df[filtered_df.apply(lambda row: search_query in json.dumps(row.to_dict()).lower(), axis=1)]
     return filtered_df
 
-# Apply the filters and search query to the DataFrame
-filtered_df = filter_data(df, filter_keys, st.session_state.filters, st.session_state.search_query)
+filtered_df = apply_filters(df, st.session_state.filters, st.session_state.search_query)
 
-# Display the list of JSONs as expandable items
+# Display filtered JSON objects as expandable items
 st.write("Filtered JSON Objects:")
-filtered_json_objects = [json_objects[i] for i in filtered_df['json_index'].unique()]
-for i, json_obj in enumerate(filtered_json_objects):
+filtered_indices = filtered_df['json_index'].drop_duplicates().to_numpy(dtype=int)
+for i in filtered_indices:
     with st.expander(f"JSON {i + 1}"):
-        st.json(json_obj)
+        st.json(json_objects[i])
