@@ -87,51 +87,46 @@ json_objects = [
 if 'search_query' not in st.session_state:
     st.session_state['search_query'] = ""
 
-if 'filters' not in st.session_state:
-    st.session_state.filters = {"component_definition": [], "component_category": [], "trigger_type": []}
+if 'component_definition' not in st.session_state:
+    st.session_state['component_definition'] = []
 
-# Sidebar for filtering based on component definitions, categories, and trigger types
+if 'component_category' not in st.session_state:
+    st.session_state['component_category'] = []
+
+# Extract unique values for component_definition and component_category
+unique_definitions = set()
+unique_categories = set()
+for obj in json_objects:
+    for component in obj.get("components", []):
+        unique_definitions.add(component.get("definition"))
+        unique_categories.add(component.get("category"))
+
+# Sidebar for filtering based on component definitions and categories
 st.sidebar.header("Filter options")
-filter_keys = ["component_definition", "component_category", "trigger_type"]
+selected_definitions = st.sidebar.multiselect("Select Component Definition", list(unique_definitions), key="select_component_definition")
+selected_categories = st.sidebar.multiselect("Select Component Category", list(unique_categories), key="select_component_category")
 
-# Generate and update filters based on user selection
-for filter_key in filter_keys:
-    # Assuming each JSON object's structure allows extraction of these properties
-    unique_values = set()
-    for obj in json_objects:
-        for comp in obj.get("components", []):
-            if filter_key in comp:
-                unique_values.add(comp[filter_key])
-    unique_values = list(unique_values)
-    unique_values.sort()
-
-    selected_filters = st.sidebar.multiselect(f"Select {filter_key.replace('_', ' ').title()}", unique_values, key=f"select_{filter_key}")
-    st.session_state.filters[filter_key] = selected_filters
+# Update the session state for filters
+st.session_state['component_definition'] = selected_definitions
+st.session_state['component_category'] = selected_categories
 
 # Text input for search query
 search_query = st.text_input("Search JSONs", value=st.session_state['search_query'])
 st.session_state['search_query'] = search_query.lower()
 
-# Function to filter JSON objects based on the search query and sidebar filters
-def filter_json_objects(json_objects, query, filters):
+# Function to filter JSON objects based on the search query and selected filters
+def filter_json_objects(json_objects, query, selected_definitions, selected_categories):
     filtered_objects = []
     for obj in json_objects:
         json_str = json.dumps(obj).lower()
-        if query in json_str:
-            # Additional logic to apply sidebar filters
-            match = True
-            for filter_key, selected_values in filters.items():
-                if selected_values:  # If there are filters to apply
-                    # Custom logic to check if obj matches the filter criteria
-                    # This is a placeholder and should be replaced with actual filtering logic
-                    match = False
-                    break
-            if match:
-                filtered_objects.append(obj)
+        definitions_match = all(defi in json_str for defi in map(str.lower, selected_definitions))
+        categories_match = all(cat in json_str for cat in map(str.lower, selected_categories))
+        if query in json_str and definitions_match and categories_match:
+            filtered_objects.append(obj)
     return filtered_objects
 
 # Apply filters
-filtered_json_objects = filter_json_objects(json_objects, st.session_state['search_query'], st.session_state.filters)
+filtered_json_objects = filter_json_objects(json_objects, st.session_state['search_query'], st.session_state['component_definition'], st.session_state['component_category'])
 
 # Display filtered JSON objects
 st.write(f"Filtered JSON Objects ({len(filtered_json_objects)} found):")
