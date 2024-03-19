@@ -13,13 +13,12 @@ json_objects = [
 json_strings = [json.dumps(obj, indent=2) for obj in json_objects]
 
 # Sidebar for selecting which JSON to display
-selected_index = st.sidebar.selectbox("Select JSON", range(len(json_strings)), format_func=lambda x: f"JSON {x + 1}")
+selected_index = st.selectbox("Select JSON", range(len(json_strings)), format_func=lambda x: f"JSON {x + 1}")
 
-# Display the selected JSON
-st.json(json_objects[selected_index])
 
 # Optionally, display the JSON string in a text area (read-only)
-st.text_area("JSON String", json_strings[selected_index], height=300)
+if st.button("Edit Json"):
+    st.text_area("JSON String", json_strings[selected_index], height=300)
 
 # Convert the list of JSONs to a DataFrame for easier handling
 df = pd.DataFrame(json_objects)
