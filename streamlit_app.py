@@ -22,7 +22,7 @@ st.json(json_objects[selected_index])
 st.text_area("JSON String", json_strings[selected_index], height=300)
 
 # Convert the list of JSONs to a DataFrame for easier handling
-df = pd.DataFrame(data)
+df = pd.DataFrame(json_objects)
 
 # Sidebar for filtering
 st.sidebar.header("Filter options")
