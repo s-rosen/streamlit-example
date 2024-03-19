@@ -15,10 +15,18 @@ json_strings = [json.dumps(obj, indent=2) for obj in json_objects]
 # Sidebar for selecting which JSON to display
 selected_index = st.selectbox("Select JSON", range(len(json_strings)), format_func=lambda x: f"JSON {x + 1}")
 
+# Initialize the toggle state in Streamlit's session state if it's not already set
+if 'show_json_editor' not in st.session_state:
+    st.session_state.show_json_editor = False
 
-# Optionally, display the JSON string in a text area (read-only)
-if st.button("Edit Json"):
-    st.text_area("JSON String", json_strings[selected_index], height=300)
+# Button to toggle the visibility of the JSON editor
+if st.button("Edit JSON"):
+    # Flip the current state
+    st.session_state.show_json_editor = not st.session_state.show_json_editor
+
+# Conditionally show the text area based on the toggle state
+if st.session_state.show_json_editor:
+    st.text_area("JSON String", value=json_strings[selected_index], height=300)
 
 # Convert the list of JSONs to a DataFrame for easier handling
 df = pd.DataFrame(json_objects)
