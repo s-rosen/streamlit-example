@@ -82,23 +82,20 @@ json_objects = [
         ]
     }
 ]
-# Assume `json_objects` is your list of JSON dictionaries
-json_objects = [
-    # Your JSON objects here
-]
 
 # Preprocess JSON objects to flatten the data for pandas
 flattened_data = []
-for obj in json_objects:
+for obj_index, obj in enumerate(json_objects):
     trigger_type = obj["trigger"]["type"] if "trigger" in obj and isinstance(obj["trigger"], dict) and "type" in obj["trigger"] else "None"
     for component in obj.get("components", []):
         flattened_data.append({
+            "json_index": obj_index,
             "component_definition": component.get("definition", "None"),
             "component_category": component.get("category", "None"),
             "trigger_type": trigger_type,
         })
 
-# Convert the preprocessed data to a DataFrame
+# Now convert the preprocessed data to a DataFrame
 df = pd.DataFrame(flattened_data)
 
 # Initialize the session state for filters if it doesn't exist yet
@@ -149,3 +146,5 @@ st.write("JSON Objects:")
 for i, json_obj in enumerate(json_objects):
     with st.expander(f"JSON {i + 1}"):
         st.json(json_obj)
+
+# The filter functionality and display of the full JSON can be implemented as needed.
