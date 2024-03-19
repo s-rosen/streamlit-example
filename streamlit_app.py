@@ -65,5 +65,10 @@ else:
     st.write("No entries match your filter criteria.")
 
 # Display filtered JSONs
-selected_index = st.selectbox("Select an entry", range(len(filtered_df)), format_func=lambda x: filtered_df.iloc[x]["name"])
+selected_index = st.selectbox(
+    "Select an entry",
+    range(len(filtered_df)),
+    format_func=lambda x: f"{filtered_df.iloc[x]['name']} - {filtered_df.iloc[x]['age']} - {filtered_df.iloc[x]['city']}"
+)
+
 st.json(filtered_df.iloc[selected_index].to_dict())
