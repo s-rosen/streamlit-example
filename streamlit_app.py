@@ -122,8 +122,9 @@ filter_keys = ["component_definition", "component_category", "trigger_type"]
 filter_key = st.sidebar.radio("Filter by", options=filter_keys, key="filter_by_key")
 
 # Generate a list of unique values for the selected filter key
-unique_values = df[filter_key].unique().tolist()
-unique_values.sort()  # Sort the list for easier browsing
+unique_values = df[filter_key].dropna().unique().tolist()  # Drop NaN values
+unique_values = [str(value) for value in unique_values]  # Convert all values to strings
+unique_values.sort()  # Now we can sort since all values are strings
 
 # Multiselect for the filter values
 selected_filters = st.sidebar.multiselect(f"Select {filter_key}", unique_values, key=f"select_{filter_key}")
